@@ -27,7 +27,7 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
-            padding: 10px 10px 90px 10px;
+            padding: 10px 10px 95px 10px;
             user-select: none;
         }
 
@@ -138,7 +138,7 @@
             border: 1px solid #e2dcd5;
             border-radius: 12px;
             padding: 12px;
-            min-height: 95px;
+            min-height: 115px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -147,7 +147,11 @@
         }
 
         .cheese-card:active {
-            transform: scale(0.97);
+            transform: scale(0.98);
+        }
+
+        .cheese-info {
+            cursor: pointer;
         }
 
         .cheese-name {
@@ -160,7 +164,7 @@
         .cheese-intensity {
             font-size: 0.75rem;
             color: #8c7a6b;
-            margin-top: 6px;
+            margin-top: 4px;
             font-weight: bold;
         }
 
@@ -171,6 +175,32 @@
         
         .cheese-card.tasted .cheese-intensity {
             color: #704f00;
+        }
+
+        /* Sistema de Puntuación con Quesitos */
+        .cheese-rating {
+            display: flex;
+            justify-content: flex-start;
+            gap: 2px;
+            margin-top: 8px;
+            padding-top: 6px;
+            border-top: 1px dashed rgba(0,0,0,0.06);
+            font-size: 1.1rem;
+        }
+
+        .cheese-card.tasted .cheese-rating {
+            border-top-color: rgba(0,0,0,0.1);
+        }
+
+        .cheese-wedge {
+            cursor: pointer;
+            opacity: 0.25;
+            transition: transform 0.1s, opacity 0.1s;
+        }
+
+        .cheese-wedge.active {
+            opacity: 1;
+            filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1));
         }
 
         /* Barra de navegación inferior fija */
@@ -317,7 +347,9 @@
 
         let currentUser = 'senora';
         let currentFilter = 'all';
-        let vault = { senora: [], senor: [] };
+        
+        // El vault ahora guardará OBJETOS en vez de IDs plano: { senora: { "id_queso": nota }, senor: {} }
+        let vault = { senora: {}, senor: {} };
         let userKeys = { senora: '', senor: '' };
         let authenticated = false;
 
@@ -338,11 +370,10 @@
             const password = document.getElementById('pass-input').value.trim();
             if (!password) return alert('Introduce una contraseña');
 
-            const encryptedData = localStorage.getItem(`buffet_vault_${currentUser}`);
+            const encryptedData = localStorage.getItem(`buffet_vault_v2_${currentUser}`);
             
             if (encryptedData) {
                 try {
-                    // Intentamos desencriptar con la contraseña introducida
                     const bytes = CryptoJS.AES.decrypt(encryptedData, password);
                     const decryptedText = bytes.toString(CryptoJS.enc.Utf8);
                     
@@ -353,9 +384,8 @@
                     return alert('❌ Contraseña incorrecta para este usuario');
                 }
             } else {
-                // Si no hay datos previos para este perfil, la contraseña introducida se convierte en su nueva clave
                 if(confirm('¿Es la primera vez que entras? Esta contraseña se guardará para proteger tu lista.')) {
-                    vault[currentUser] = [];
+                    vault[currentUser] = {};
                     saveToLocalStorage(currentUser, password);
                 } else {
                     return;
@@ -371,7 +401,7 @@
         function saveToLocalStorage(user, key) {
             const dataString = JSON.stringify(vault[user]);
             const ciphertext = CryptoJS.AES.encrypt(dataString, key).toString();
-            localStorage.setItem(`buffet_vault_${user}`, ciphertext);
+            localStorage.setItem(`buffet_vault_v2_${user}`, ciphertext);
         }
 
         function renderGrid() {
@@ -386,11 +416,21 @@
                 const card = document.createElement('div');
                 card.className = 'cheese-card';
                 card.id = `cheese-${cheese.id}`;
+                
+                // Creamos los 5 quesitos interactivos
+                let wedgesHTML = '<div class="cheese-rating">';
+                for(let i = 1; i <= 5; i++) {
+                    wedgesHTML += `<span class="cheese-wedge" id="wedge-${cheese.id}-${i}" onclick="rateCheese(event, ${cheese.id}, ${i})">🧀</span>`;
+                }
+                wedgesHTML += '</div>';
+
                 card.innerHTML = `
-                    <div class="cheese-name">${cheese.name}</div>
-                    <div class="cheese-intensity">${cheese.intensityText}</div>
+                    <div class="cheese-info" onclick="toggleCheese(${cheese.id})">
+                        <div class="cheese-name">${cheese.name}</div>
+                        <div class="cheese-intensity">${cheese.intensityText}</div>
+                    </div>
+                    ${wedgesHTML}
                 `;
-                card.onclick = () => toggleCheese(cheese.id);
                 grid.appendChild(card);
             });
         }
@@ -404,10 +444,22 @@
             cheeses.forEach(cheese => {
                 const card = document.getElementById(`cheese-${cheese.id}`);
                 if (card) {
-                    if (vault[currentUser].includes(cheese.id)) {
+                    const rating = vault[currentUser][cheese.id];
+                    
+                    if (rating !== undefined) {
                         card.classList.add('tasted');
+                        // Pintar los quesitos activos
+                        for(let i = 1; i <= 5; i++) {
+                            const wedge = document.getElementById(`wedge-${cheese.id}-${i}`);
+                            if(wedge) wedge.classList.toggle('active', i <= rating);
+                        }
                     } else {
                         card.classList.remove('tasted');
+                        // Apagar todos los quesitos
+                        for(let i = 1; i <= 5; i++) {
+                            const wedge = document.getElementById(`wedge-${cheese.id}-${i}`);
+                            if(wedge) wedge.classList.remove('active');
+                        }
                     }
                 }
             });
@@ -417,7 +469,6 @@
             if (currentUser === user && authenticated) return;
             currentUser = user;
             
-            // Si el nuevo usuario no está autenticado con sesión activa, pedimos login
             if (!userKeys[user]) {
                 showAuthScreen();
             } else {
@@ -430,12 +481,24 @@
         function toggleCheese(id) {
             if (!authenticated) return;
 
-            const index = vault[currentUser].indexOf(id);
-            if (index > -1) {
-                vault[currentUser].splice(index, 1);
+            if (vault[currentUser][id] !== undefined) {
+                // Si ya tenía nota, al pulsar el texto lo borramos por completo
+                delete vault[currentUser][id];
             } else {
-                vault[currentUser].push(id);
+                // Si no tenía nota, por defecto le damos 1 quesito para marcarlo como catado
+                vault[currentUser][id] = 1;
             }
+
+            saveToLocalStorage(currentUser, userKeys[currentUser]);
+            updateUI();
+        }
+
+        function rateCheese(event, id, rating) {
+            if (!authenticated) return;
+            event.stopPropagation(); // Evita que se dispare el click del contenedor superior
+
+            // Guardamos la nota directamente
+            vault[currentUser][id] = rating;
 
             saveToLocalStorage(currentUser, userKeys[currentUser]);
             updateUI();
@@ -460,7 +523,6 @@
             showAuthScreen();
         }
 
-        // Permitir pulsar Enter en el teclado móvil para acceder
         document.getElementById('pass-input').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') unlockProfile();
         });
