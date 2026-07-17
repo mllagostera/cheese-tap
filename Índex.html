@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ruta del Queso - Les Grands Buffets</title>
+    <style>
+        :root {
+            --bg-color: #f9f6f0;
+            --card-bg: #ffffff;
+            --text-color: #2b1d0c;
+            --accent-color: #b5835a;
+            --selected-color: #ffd166;
+            --selected-border: #e09f3e;
+            --tab-inactive: #e6dfd5;
+        }
+
+        /* Reset para evitar zoom y desajustes en móvil */
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 10px 10px 90px 10px; /* Margen inferior para que el menú flotante no tape contenido */
+            user-select: none;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 15px;
+            padding: 10px 5px;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            margin: 0 0 5px 0;
+        }
+
+        p {
+            font-size: 0.85rem;
+            margin: 0;
+            color: #665544;
+        }
+
+        /* Filtros por nivel de intensidad */
+        .intensity-filters {
+            display: flex;
+            justify-content: space-between;
+            max-width: 400px;
+            margin: 12px auto;
+            gap: 5px;
+            padding: 0 5px;
+        }
+
+        .filter-btn {
+            flex: 1;
+            padding: 8px 0;
+            font-size: 0.8rem;
+            font-weight: bold;
+            border: 1px solid var(--tab-inactive);
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            color: var(--text-color);
+            cursor: pointer;
+        }
+
+        .filter-btn.active {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        /* Grid optimizado para móvil */
+        .cheese-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+            gap: 10px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Tarjeta de Queso */
+        .cheese-card {
+            background-color: var(--card-bg);
+            border: 1px solid #e2dcd5;
+            border-radius: 12px;
+            padding: 12px;
+            min-height: 95px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+            transition: transform 0.1s, background-color 0.1s;
+        }
+
+        .cheese-card:active {
+            transform: scale(0.97);
+        }
+
+        .cheese-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            line-height: 1.2;
+            word-break: break-word;
+        }
+
+        .cheese-intensity {
+            font-size: 0.75rem;
+            color: #8c7a6b;
+            margin-top: 6px;
+            font-weight: bold;
+        }
+
+        /* Estado catado */
+        .cheese-card.tasted {
+            background-color: var(--selected-color);
+            border-color: var(--selected-border);
+        }
+        
+        .cheese-card.tasted .cheese-intensity {
+            color: #704f00;
+        }
+
+        /* Barra de navegación inferior fija para cambiar de usuario fácilmente con el pulgar */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-top: 1px solid #e2dcd5;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 15px calc(10px + env(safe-area-inset-bottom)) 15px; /* Soporte para notch inferior */
+            box-shadow: 0 -3px 10px rgba(0,0,0,0.05);
+            z-index: 100;
+        }
+
+        .nav-btn {
+            flex: 1;
+            max-width: 160px;
+            padding: 12px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            border: none;
+            background-color: var(--tab-inactive);
+            color: #665544;
+            border-radius: 30px;
+            transition: all 0.2s;
+        }
+
+        .nav-btn.active {
+            background-color: #2b1d0c;
+            color: #ffffff;
+        }
+
+        .nav-btn:first-child {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🧀 Ruta del Queso</h1>
+        <p>Les Grands Buffets</p>
+        
+        <!-- Selector rápido de intensidad -->
+        <div class="intensity-filters">
+            <button class="filter-btn active" id="f-all" onclick="filterIntensity('all')">Todos</button>
+            <button class="filter-btn" id="f-1" onclick="filterIntensity(1)">1/5</button>
+            <button class="filter-btn" id="f-2" onclick="filterIntensity(2)">2/5</button>
+            <button class="filter-btn" id="f-3" onclick="filterIntensity(3)">3/5</button>
+            <button class="filter-btn" id="f-4" onclick="filterIntensity(4)">4/5</button>
+            <button class="filter-btn" id="f-5" onclick="filterIntensity(5)">5/5</button>
+        </div>
+    </header>
+
+    <main class="cheese-grid" id="grid"></main>
+
+    <!-- Navegación táctil inferior -->
+    <div class="bottom-nav">
+        <button id="btn-senora" class="nav-btn" onclick="switchUser('senora')">👩‍🦰 Sra. Queso</button>
+        <button id="btn-senor" class="nav-btn" onclick="switchUser('senor')">👨 Sr. Queso</button>
+    </div>
+
+    <script>
+        const cheeses = [
+            // === INTENSIDAD 1/5 ===
+            { id: 1, name: "Mozzarella di Bufala Campana", intensity: 1, intensityText: "Suave 1/5" },
+            { id: 2, name: "Feta AOP (Grecia)", intensity: 1, intensityText: "Suave 1/5" },
+            { id: 3, name: "Rocamadour AOP", intensity: 1, intensityText: "Suave 1/5" },
+            { id: 4, name: "Pélardon AOP", intensity: 1, intensityText: "Suave 1/5" },
+            { id: 5, name: "Sainte-Maure de Touraine", intensity: 1, intensityText: "Suave 1/5" },
+            { id: 6, name: "Selles-sur-Cher AOP", intensity: 1, intensityText: "Suave 1/5" },
+            { id: 7, name: "Valençay AOP", intensity: 1, intensityText: "Suave 1/5" },
+            { id: 8, name: "Chabichou du Poitou AOP", intensity: 1, intensityText: "Suave 1/5" },
+            { id: 9, name: "Banon AOP", intensity: 1, intensityText: "Suave 1/5" },
+            { id: 10, name: "Saint-Marcellin", intensity: 1, intensityText: "Suave 1/5" },
+
+            // === INTENSIDAD 2/5 ===
+            { id: 11, name: "Saint-Félicien", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 12, name: "Chaource AOP", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 13, name: "Neufchâtel AOP (Corazón)", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 14, name: "Brie de Meaux AOP", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 15, name: "Brie de Melun AOP", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 16, name: "Camembert de Normandie", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 17, name: "Brillat-Savarin", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 18, name: "Tomme de Savoie IGP", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 19, name: "Reblochon de Savoie AOP", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 20, name: "Saint-Nectaire AOP", intensity: 2, intensityText: "Medio-Suave 2/5" },
+
+            // === INTENSIDAD 3/5 ===
+            { id: 21, name: "Morbier AOP", intensity: 3, intensityText: "Medio 3/5" },
+            { id: 22, name: "Ossau-Iraty AOP", intensity: 3, intensityText: "Medio 3/5" },
+            { id: 23, name: "Cantal Entre-Deux AOP", intensity: 3, intensityText: "Medio 3/5" },
+            { id: 24, name: "Abondance AOP", intensity: 3, intensityText: "Medio 3/5" },
+            { id: 25, name: "Beaufort AOP", intensity: 3, intensityText: "Medio 3/5" },
+            { id: 26, name: "Comté AOP (12 meses)", intensity: 3, intensityText: "Medio 3/5" },
+            { id: 27, name: "Comté AOP (18 meses)", intensity: 3, intensityText: "Medio-Fuerte 3/5" },
+            { id: 28, name: "Salers AOP", intensity: 3, intensityText: "Medio-Fuerte 3/5" },
+            { id: 29, name: "Tête de Moine AOP", intensity: 3, intensityText: "Medio-Fuerte 3/5" },
+            { id: 30, name: "Parmigiano Reggiano (24m)", intensity: 3, intensityText: "Medio-Fuerte 3/5" },
+
+            // === INTENSIDAD 4/5 ===
+            { id: 31, name: "Appenzeller Extra (Suiza)", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 32, name: "Gruyère d'Alpage AOP", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 33, name: "Pecorino Romano AOP", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 34, name: "Gouda Viejo", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 35, name: "Cheddar Vintage (UK)", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 36, name: "Pont-l'Évêque AOP", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 37, name: "Livarot AOP", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 38, name: "Langres AOP", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 39, name: "Munster AOP", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 40, name: "Maroilles AOP", intensity: 4, intensityText: "Fuerte 4/5" },
+
+            // === INTENSIDAD 5/5 ===
+            { id: 41, name: "Époisses Berthaut AOP", intensity: 5, intensityText: "Muy Fuerte 5/5" },
+            { id: 42, name: "Boulette d'Avesnes", intensity: 5, intensityText: "Muy Fuerte 5/5" },
+            { id: 43, name: "Fourme d'Ambert AOP", intensity: 5, intensityText: "Muy Fuerte 5/5" },
+            { id: 44, name: "Bleu d'Auvergne AOP", intensity: 5, intensityText: "Muy Fuerte 5/5" },
+            { id: 45, name: "Gorgonzola Dolce AOP", intensity: 5, intensityText: "Muy Fuerte 5/5" },
+            { id: 46, name: "Gorgonzola Picante AOP", intensity: 5, intensityText: "Muy Fuerte 5/5" },
+            { id: 47, name: "Stilton AOP (UK)", intensity: 5, intensityText: "Muy Fuerte 5/5" },
+            { id: 48, name: "Roquefort Papillon AOP", intensity: 5, intensityText: "Extremo 5/5" },
+            { id: 49, name: "Roquefort Baragnaudes", intensity: 5, intensityText: "Extremo 5/5" },
+            { id: 50, name: "Cabrales AOP", intensity: 5, intensityText: "Extremo 5/5" }
+        ];
+
+        let currentUser = 'senora';
+        let currentFilter = 'all';
+        let trackingData = JSON.parse(localStorage.getItem('buffet_cheese_tracker')) || { senora: [], senor: [] };
+
+        function initApp() {
+            renderGrid();
+            switchUser(currentUser);
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+
+            const filteredCheeses = currentFilter === 'all' 
+                ? cheeses 
+                : cheeses.filter(c => c.intensity === currentFilter);
+
+            filteredCheeses.forEach(cheese => {
+                const card = document.createElement('div');
+                card.className = 'cheese-card';
+                card.id = `cheese-${cheese.id}`;
+                card.innerHTML = `
+                    <div class="cheese-name">${cheese.name}</div>
+                    <div class="cheese-intensity">${cheese.intensityText}</div>
+                `;
+                card.onclick = () => toggleCheese(cheese.id);
+                grid.appendChild(card);
+            });
+        }
+
+        function switchUser(user) {
+            currentUser = user;
+            
+            // Actualizar botones de navegación inferior
+            document.getElementById('btn-senora').classList.toggle('active', user === 'senora');
+            document.getElementById('btn-senor').classList.toggle('active', user === 'senor');
+
+            // Marcar visualmente las tarjetas activas
+            cheeses.forEach(cheese => {
+                const card = document.getElementById(`cheese-${cheese.id}`);
+                if (card) {
+                    if (trackingData[currentUser].includes(cheese.id)) {
+                        card.classList.add('tasted');
+                    } else {
+                        card.classList.remove('tasted');
+                    }
+                }
+            });
+        }
+
+        function toggleCheese(id) {
+            const index = trackingData[currentUser].indexOf(id);
+            
+            if (index > -1) {
+                trackingData[currentUser].splice(index, 1);
+            } else {
+                trackingData[currentUser].push(id);
+            }
+
+            localStorage.setItem('buffet_cheese_tracker', JSON.stringify(trackingData));
+            switchUser(currentUser);
+        }
+
+        function filterIntensity(value) {
+            currentFilter = value;
+            
+            // Actualizar botones de filtro
+            const buttons = document.querySelectorAll('.filter-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            const activeId = value === 'all' ? 'f-all' : `f-${value}`;
+            document.getElementById(activeId).classList.add('active');
+
+            // Re-renderizar y volver a aplicar el estado del usuario activo
+            renderGrid();
+            switchUser(currentUser);
+        }
+
+        // Arrancar la app al cargar la página
+        initApp();
+    </script>
+</body>
+</html>
