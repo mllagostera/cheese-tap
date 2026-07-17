@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ruta del Queso - Les Grands Buffets</title>
+    <!-- Cargamos CryptoJS para encriptar los datos de forma nativa -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
         :root {
             --bg-color: #f9f6f0;
@@ -15,7 +17,6 @@
             --tab-inactive: #e6dfd5;
         }
 
-        /* Reset para evitar zoom y desajustes en móvil */
         * {
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
@@ -26,7 +27,7 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
-            padding: 10px 10px 90px 10px; /* Margen inferior para que la barra no tape contenido */
+            padding: 10px 10px 90px 10px;
             user-select: none;
         }
 
@@ -45,6 +46,54 @@
             font-size: 0.85rem;
             margin: 0;
             color: #665544;
+        }
+
+        /* Pantalla de Autenticación */
+        .auth-container {
+            display: block;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--bg-color);
+            z-index: 1000;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .auth-box {
+            max-width: 320px;
+            margin: 60px auto 0 auto;
+            background: white;
+            padding: 30px 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid #e2dcd5;
+        }
+
+        .auth-box h2 {
+            margin-top: 0;
+            font-size: 1.2rem;
+        }
+
+        .auth-box input {
+            width: 100%;
+            padding: 12px;
+            margin: 15px 0;
+            border: 1px solid var(--tab-inactive);
+            border-radius: 8px;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        .auth-box button {
+            width: 100%;
+            padding: 12px;
+            background-color: #2b1d0c;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
         }
 
         /* Filtros por nivel de intensidad */
@@ -75,7 +124,7 @@
             border-color: var(--accent-color);
         }
 
-        /* Grid optimizado para móvil */
+        /* Grid optimizado */
         .cheese-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
@@ -84,7 +133,6 @@
             margin: 0 auto;
         }
 
-        /* Tarjeta de Queso */
         .cheese-card {
             background-color: var(--card-bg);
             border: 1px solid #e2dcd5;
@@ -116,7 +164,6 @@
             font-weight: bold;
         }
 
-        /* Estado catado */
         .cheese-card.tasted {
             background-color: var(--selected-color);
             border-color: var(--selected-border);
@@ -129,31 +176,28 @@
         /* Barra de navegación inferior fija */
         .bottom-nav {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
+            bottom: 0; left: 0; right: 0;
             background-color: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border-top: 1px solid #e2dcd5;
             display: flex;
             justify-content: space-around;
-            padding: 10px 15px calc(10px + env(safe-area-inset-bottom)) 15px; /* Soporte para notch */
+            padding: 10px 15px calc(10px + env(safe-area-inset-bottom)) 15px;
             box-shadow: 0 -3px 10px rgba(0,0,0,0.05);
             z-index: 100;
         }
 
         .nav-btn {
             flex: 1;
-            max-width: 160px;
+            max-width: 140px;
             padding: 12px;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: bold;
             border: none;
             background-color: var(--tab-inactive);
             color: #665544;
             border-radius: 30px;
-            transition: all 0.2s;
         }
 
         .nav-btn.active {
@@ -161,18 +205,36 @@
             color: #ffffff;
         }
 
-        .nav-btn:first-child {
-            margin-right: 10px;
+        .logout-btn {
+            background: none;
+            border: 1px solid #c9c0b5;
+            color: #887766;
+            padding: 5px 10px;
+            font-size: 0.75rem;
+            border-radius: 12px;
+            margin-top: 8px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
 
+    <!-- Pantalla de Login Flotante -->
+    <div id="auth-screen" class="auth-container">
+        <h1>🧀 Ruta del Queso</h1>
+        <div class="auth-box">
+            <h2 id="auth-title">Desbloquear Perfil</h2>
+            <p>Introduce tu clave secreta para acceder.</p>
+            <input type="password" id="pass-input" placeholder="Contraseña numérica o texto" autofocus>
+            <button onclick="unlockProfile()">Acceder</button>
+        </div>
+    </div>
+
     <header>
         <h1>🧀 Ruta del Queso</h1>
         <p>Les Grands Buffets</p>
+        <button class="logout-btn" onclick="lockProfile()">🔒 Cerrar Perfil</button>
         
-        <!-- Selector rápido de intensidad -->
         <div class="intensity-filters">
             <button class="filter-btn active" id="f-all" onclick="filterIntensity('all')">Todos</button>
             <button class="filter-btn" id="f-1" onclick="filterIntensity(1)">1/5</button>
@@ -185,7 +247,6 @@
 
     <main class="cheese-grid" id="grid"></main>
 
-    <!-- Navegación táctil inferior -->
     <div class="bottom-nav">
         <button id="btn-senora" class="nav-btn" onclick="switchUser('senora')">👩‍🦰 Sra. Queso</button>
         <button id="btn-senor" class="nav-btn" onclick="switchUser('senor')">👨 Sr. Queso</button>
@@ -256,11 +317,61 @@
 
         let currentUser = 'senora';
         let currentFilter = 'all';
-        let trackingData = JSON.parse(localStorage.getItem('buffet_cheese_tracker')) || { senora: [], senor: [] };
+        let vault = { senora: [], senor: [] };
+        let userKeys = { senora: '', senor: '' };
+        let authenticated = false;
 
         function initApp() {
             renderGrid();
+            showAuthScreen();
+        }
+
+        function showAuthScreen() {
+            authenticated = false;
+            document.getElementById('auth-screen').style.display = 'block';
+            document.getElementById('auth-title').innerText = `Perfil: ${currentUser === 'senora' ? '👩‍🦰 Sra. Queso' : '👨 Sr. Queso'}`;
+            document.getElementById('pass-input').value = '';
+            document.getElementById('pass-input').focus();
+        }
+
+        function unlockProfile() {
+            const password = document.getElementById('pass-input').value.trim();
+            if (!password) return alert('Introduce una contraseña');
+
+            const encryptedData = localStorage.getItem(`buffet_vault_${currentUser}`);
+            
+            if (encryptedData) {
+                try {
+                    // Intentamos desencriptar con la contraseña introducida
+                    const bytes = CryptoJS.AES.decrypt(encryptedData, password);
+                    const decryptedText = bytes.toString(CryptoJS.enc.Utf8);
+                    
+                    if (!decryptedText) throw new Error("Incorrecto");
+                    
+                    vault[currentUser] = JSON.parse(decryptedText);
+                } catch (e) {
+                    return alert('❌ Contraseña incorrecta para este usuario');
+                }
+            } else {
+                // Si no hay datos previos para este perfil, la contraseña introducida se convierte en su nueva clave
+                if(confirm('¿Es la primera vez que entras? Esta contraseña se guardará para proteger tu lista.')) {
+                    vault[currentUser] = [];
+                    saveToLocalStorage(currentUser, password);
+                } else {
+                    return;
+                }
+            }
+
+            userKeys[currentUser] = password;
+            authenticated = true;
+            document.getElementById('auth-screen').style.display = 'none';
             updateUI();
+        }
+
+        function saveToLocalStorage(user, key) {
+            const dataString = JSON.stringify(vault[user]);
+            const ciphertext = CryptoJS.AES.encrypt(dataString, key).toString();
+            localStorage.setItem(`buffet_vault_${user}`, ciphertext);
         }
 
         function renderGrid() {
@@ -285,15 +396,15 @@
         }
 
         function updateUI() {
-            // Actualizar botones de navegación inferior de usuario
             document.getElementById('btn-senora').classList.toggle('active', currentUser === 'senora');
             document.getElementById('btn-senor').classList.toggle('active', currentUser === 'senor');
 
-            // Marcar visualmente solo las tarjetas que existen actualmente en el DOM (evitamos error null)
+            if (!authenticated) return;
+
             cheeses.forEach(cheese => {
                 const card = document.getElementById(`cheese-${cheese.id}`);
                 if (card) {
-                    if (trackingData[currentUser].includes(cheese.id)) {
+                    if (vault[currentUser].includes(cheese.id)) {
                         card.classList.add('tasted');
                     } else {
                         card.classList.remove('tasted');
@@ -303,39 +414,57 @@
         }
 
         function switchUser(user) {
+            if (currentUser === user && authenticated) return;
             currentUser = user;
-            updateUI();
+            
+            // Si el nuevo usuario no está autenticado con sesión activa, pedimos login
+            if (!userKeys[user]) {
+                showAuthScreen();
+            } else {
+                authenticated = true;
+                document.getElementById('auth-screen').style.display = 'none';
+                updateUI();
+            }
         }
 
         function toggleCheese(id) {
-            const index = trackingData[currentUser].indexOf(id);
-            
+            if (!authenticated) return;
+
+            const index = vault[currentUser].indexOf(id);
             if (index > -1) {
-                trackingData[currentUser].splice(index, 1);
+                vault[currentUser].splice(index, 1);
             } else {
-                trackingData[currentUser].push(id);
+                vault[currentUser].push(id);
             }
 
-            localStorage.setItem('buffet_cheese_tracker', JSON.stringify(trackingData));
+            saveToLocalStorage(currentUser, userKeys[currentUser]);
             updateUI();
         }
 
         function filterIntensity(value) {
             currentFilter = value;
             
-            // Actualizar botones de filtro
             const buttons = document.querySelectorAll('.filter-btn');
             buttons.forEach(btn => btn.classList.remove('active'));
             
             const activeId = value === 'all' ? 'f-all' : `f-${value}`;
-            document.getElementById(activeId).classList.add('active');
+            const targetBtn = document.getElementById(activeId);
+            if (targetBtn) targetBtn.classList.add('active');
 
-            // Re-renderizar y aplicar los estados correspondientes
             renderGrid();
             updateUI();
         }
 
-        // Arrancar la app al cargar la página
+        function lockProfile() {
+            userKeys[currentUser] = '';
+            showAuthScreen();
+        }
+
+        // Permitir pulsar Enter en el teclado móvil para acceder
+        document.getElementById('pass-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') unlockProfile();
+        });
+
         initApp();
     </script>
 </body>
