@@ -26,7 +26,7 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
-            padding: 10px 10px 90px 10px; /* Margen inferior para que el menú flotante no tape contenido */
+            padding: 10px 10px 90px 10px; /* Margen inferior para que la barra no tape contenido */
             user-select: none;
         }
 
@@ -126,7 +126,7 @@
             color: #704f00;
         }
 
-        /* Barra de navegación inferior fija para cambiar de usuario fácilmente con el pulgar */
+        /* Barra de navegación inferior fija */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -138,7 +138,7 @@
             border-top: 1px solid #e2dcd5;
             display: flex;
             justify-content: space-around;
-            padding: 10px 15px calc(10px + env(safe-area-inset-bottom)) 15px; /* Soporte para notch inferior */
+            padding: 10px 15px calc(10px + env(safe-area-inset-bottom)) 15px; /* Soporte para notch */
             box-shadow: 0 -3px 10px rgba(0,0,0,0.05);
             z-index: 100;
         }
@@ -260,7 +260,7 @@
 
         function initApp() {
             renderGrid();
-            switchUser(currentUser);
+            updateUI();
         }
 
         function renderGrid() {
@@ -284,14 +284,12 @@
             });
         }
 
-        function switchUser(user) {
-            currentUser = user;
-            
-            // Actualizar botones de navegación inferior
-            document.getElementById('btn-senora').classList.toggle('active', user === 'senora');
-            document.getElementById('btn-senor').classList.toggle('active', user === 'senor');
+        function updateUI() {
+            // Actualizar botones de navegación inferior de usuario
+            document.getElementById('btn-senora').classList.toggle('active', currentUser === 'senora');
+            document.getElementById('btn-senor').classList.toggle('active', currentUser === 'senor');
 
-            // Marcar visualmente las tarjetas activas
+            // Marcar visualmente solo las tarjetas que existen actualmente en el DOM (evitamos error null)
             cheeses.forEach(cheese => {
                 const card = document.getElementById(`cheese-${cheese.id}`);
                 if (card) {
@@ -304,6 +302,11 @@
             });
         }
 
+        function switchUser(user) {
+            currentUser = user;
+            updateUI();
+        }
+
         function toggleCheese(id) {
             const index = trackingData[currentUser].indexOf(id);
             
@@ -314,7 +317,7 @@
             }
 
             localStorage.setItem('buffet_cheese_tracker', JSON.stringify(trackingData));
-            switchUser(currentUser);
+            updateUI();
         }
 
         function filterIntensity(value) {
@@ -327,9 +330,9 @@
             const activeId = value === 'all' ? 'f-all' : `f-${value}`;
             document.getElementById(activeId).classList.add('active');
 
-            // Re-renderizar y volver a aplicar el estado del usuario activo
+            // Re-renderizar y aplicar los estados correspondientes
             renderGrid();
-            switchUser(currentUser);
+            updateUI();
         }
 
         // Arrancar la app al cargar la página
