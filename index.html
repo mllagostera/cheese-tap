@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ruta del Queso - Les Grands Buffets</title>
-    <!-- Cargamos CryptoJS para encriptar los datos de forma nativa -->
+    <!-- Cargamos CryptoJS para encriptar los datos -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
         :root {
@@ -15,6 +15,7 @@
             --selected-color: #ffd166;
             --selected-border: #e09f3e;
             --tab-inactive: #e6dfd5;
+            --telegram-color: #0088cc;
         }
 
         * {
@@ -27,7 +28,7 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
-            padding: 10px 10px 95px 10px;
+            padding: 10px 10px 145px 10px; /* Más espacio inferior para el botón de Telegram */
             user-select: none;
         }
 
@@ -55,15 +56,16 @@
             top: 0; left: 0; right: 0; bottom: 0;
             background-color: var(--bg-color);
             z-index: 1000;
-            padding: 40px 20px;
+            padding: 20px;
             text-align: center;
+            overflow-y: auto;
         }
 
         .auth-box {
-            max-width: 320px;
-            margin: 60px auto 0 auto;
+            max-width: 340px;
+            margin: 30px auto 0 auto;
             background: white;
-            padding: 30px 20px;
+            padding: 25px 20px;
             border-radius: 16px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             border: 1px solid #e2dcd5;
@@ -74,13 +76,22 @@
             font-size: 1.2rem;
         }
 
+        .auth-box label {
+            display: block;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-top: 10px;
+            color: #8c7a6b;
+        }
+
         .auth-box input {
             width: 100%;
-            padding: 12px;
-            margin: 15px 0;
+            padding: 10px;
+            margin: 5px 0 10px 0;
             border: 1px solid var(--tab-inactive);
             border-radius: 8px;
-            font-size: 1rem;
+            font-size: 0.9rem;
             text-align: center;
         }
 
@@ -94,6 +105,7 @@
             font-size: 1rem;
             font-weight: bold;
             cursor: pointer;
+            margin-top: 10px;
         }
 
         /* Filtros por nivel de intensidad */
@@ -188,22 +200,16 @@
             font-size: 1.1rem;
         }
 
-        .cheese-card.tasted .cheese-rating {
-            border-top-color: rgba(0,0,0,0.1);
-        }
-
         .cheese-wedge {
             cursor: pointer;
             opacity: 0.25;
-            transition: transform 0.1s, opacity 0.1s;
         }
 
         .cheese-wedge.active {
             opacity: 1;
-            filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1));
         }
 
-        /* Barra de navegación inferior fija */
+        /* Barra de acciones inferior fija */
         .bottom-nav {
             position: fixed;
             bottom: 0; left: 0; right: 0;
@@ -212,17 +218,23 @@
             -webkit-backdrop-filter: blur(10px);
             border-top: 1px solid #e2dcd5;
             display: flex;
-            justify-content: space-around;
+            flex-direction: column;
+            gap: 8px;
             padding: 10px 15px calc(10px + env(safe-area-inset-bottom)) 15px;
             box-shadow: 0 -3px 10px rgba(0,0,0,0.05);
             z-index: 100;
         }
 
+        .user-toggle-row {
+            display: flex;
+            justify-content: space-around;
+        }
+
         .nav-btn {
             flex: 1;
             max-width: 140px;
-            padding: 12px;
-            font-size: 0.9rem;
+            padding: 10px;
+            font-size: 0.85rem;
             font-weight: bold;
             border: none;
             background-color: var(--tab-inactive);
@@ -233,6 +245,25 @@
         .nav-btn.active {
             background-color: #2b1d0c;
             color: #ffffff;
+        }
+
+        .telegram-btn {
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+            padding: 10px;
+            background-color: var(--telegram-color);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 2px 5px rgba(0,136,204,0.3);
         }
 
         .logout-btn {
@@ -249,14 +280,23 @@
 </head>
 <body>
 
-    <!-- Pantalla de Login Flotante -->
+    <!-- Pantalla de Login y Configuración -->
     <div id="auth-screen" class="auth-container">
         <h1>🧀 Ruta del Queso</h1>
         <div class="auth-box">
             <h2 id="auth-title">Desbloquear Perfil</h2>
-            <p>Introduce tu clave secreta para acceder.</p>
-            <input type="password" id="pass-input" placeholder="Contraseña numérica o texto" autofocus>
-            <button onclick="unlockProfile()">Acceder</button>
+            <p>Configura o accede a tu cuenta secreta.</p>
+            
+            <label>CONTRASEÑA DEL PERFIL</label>
+            <input type="password" id="pass-input" placeholder="Tu clave para cifrar datos">
+            
+            <label>TELEGRAM BOT TOKEN (Opcional)</label>
+            <input type="text" id="tg-token-input" placeholder="123456:ABC-def...">
+            
+            <label>TELEGRAM CHAT ID (Opcional)</label>
+            <input type="text" id="tg-id-input" placeholder="987654321">
+            
+            <button onclick="unlockProfile()">Acceder al Buffet</button>
         </div>
     </div>
 
@@ -277,9 +317,15 @@
 
     <main class="cheese-grid" id="grid"></main>
 
+    <!-- Panel inferior con cambio de usuario y envío a Telegram -->
     <div class="bottom-nav">
-        <button id="btn-senora" class="nav-btn" onclick="switchUser('senora')">👩‍🦰 Sra. Queso</button>
-        <button id="btn-senor" class="nav-btn" onclick="switchUser('senor')">👨 Sr. Queso</button>
+        <button class="telegram-btn" onclick="sendToTelegram()">
+            ✈️ Enviar mis notas a Telegram
+        </button>
+        <div class="user-toggle-row">
+            <button id="btn-senora" class="nav-btn" onclick="switchUser('senora')">👩‍🦰 Sra. Queso</button>
+            <button id="btn-senor" class="nav-btn" onclick="switchUser('senor')">👨 Sr. Queso</button>
+        </div>
     </div>
 
     <script>
@@ -295,60 +341,109 @@
             { id: 8, name: "Chabichou du Poitou AOP", intensity: 1, intensityText: "Suave 1/5" },
             { id: 9, name: "Banon AOP", intensity: 1, intensityText: "Suave 1/5" },
             { id: 10, name: "Saint-Marcellin", intensity: 1, intensityText: "Suave 1/5" },
+            { id: 11, name: "Tomme de Chèvre Fraîche", intensity: 1, intensityText: "Suave 1/5" },
+            { id: 12, name: "Brocciu Corse AOP", intensity: 1, intensityText: "Suave 1/5" },
+            { id: 13, name: "Faisselle Artisanale", intensity: 1, intensityText: "Suave 1/5" },
+            { id: 14, name: "Cervelle de Canut", intensity: 1, intensityText: "Suave 1/5" },
+            { id: 15, name: "Brillat-Savarin Frais", intensity: 1, intensityText: "Suave 1/5" },
+            { id: 16, name: "Rulo de Cabra Tierno", intensity: 1, intensityText: "Suave 1/5" },
+            { id: 17, name: "Manojo de Espárragos de Cabra", intensity: 1, intensityText: "Suave 1/5" },
+            { id: 18, name: "Brique du Forez Cendrée", intensity: 1, intensityText: "Suave 1/5" },
+            { id: 19, name: "Picodon AOP Tierno", intensity: 1, intensityText: "Suave 1/5" },
+            { id: 20, name: "Crottin de Chavignol Tierno", intensity: 1, intensityText: "Suave 1/5" },
 
             // === INTENSIDAD 2/5 ===
-            { id: 11, name: "Saint-Félicien", intensity: 2, intensityText: "Medio-Suave 2/5" },
-            { id: 12, name: "Chaource AOP", intensity: 2, intensityText: "Medio-Suave 2/5" },
-            { id: 13, name: "Neufchâtel AOP (Corazón)", intensity: 2, intensityText: "Medio-Suave 2/5" },
-            { id: 14, name: "Brie de Meaux AOP", intensity: 2, intensityText: "Medio-Suave 2/5" },
-            { id: 15, name: "Brie de Melun AOP", intensity: 2, intensityText: "Medio-Suave 2/5" },
-            { id: 16, name: "Camembert de Normandie", intensity: 2, intensityText: "Medio-Suave 2/5" },
-            { id: 17, name: "Brillat-Savarin", intensity: 2, intensityText: "Medio-Suave 2/5" },
-            { id: 18, name: "Tomme de Savoie IGP", intensity: 2, intensityText: "Medio-Suave 2/5" },
-            { id: 19, name: "Reblochon de Savoie AOP", intensity: 2, intensityText: "Medio-Suave 2/5" },
-            { id: 20, name: "Saint-Nectaire AOP", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 21, name: "Saint-Félicien", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 22, name: "Chaource AOP", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 23, name: "Neufchâtel AOP (Corazón)", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 24, name: "Brie de Meaux AOP", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 25, name: "Brie de Melun AOP", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 26, name: "Camembert de Normandie", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 27, name: "Brillat-Savarin Affiné", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 28, name: "Tomme de Savoie IGP", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 29, name: "Reblochon de Savoie AOP", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 30, name: "Saint-Nectaire AOP", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 31, name: "Tomme de Pyrénées", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 32, name: "Brie aux Truffes", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 33, name: "Coulommiers Artisanal", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 34, name: "Gaperon au Poivre et Ail", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 35, name: "Saint-Pierre de Cabra", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 36, name: "Pavín d'Auvergne", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 37, name: "Cantal Jeune AOP", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 38, name: "Laguiole AOP Joven", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 39, name: "Edam Etuve", intensity: 2, intensityText: "Medio-Suave 2/5" },
+            { id: 40, name: "Manchego Curado (España)", intensity: 2, intensityText: "Medio-Suave 2/5" },
 
             // === INTENSIDAD 3/5 ===
-            { id: 21, name: "Morbier AOP", intensity: 3, intensityText: "Medio 3/5" },
-            { id: 22, name: "Ossau-Iraty AOP", intensity: 3, intensityText: "Medio 3/5" },
-            { id: 23, name: "Cantal Entre-Deux AOP", intensity: 3, intensityText: "Medio 3/5" },
-            { id: 24, name: "Abondance AOP", intensity: 3, intensityText: "Medio 3/5" },
-            { id: 25, name: "Beaufort AOP", intensity: 3, intensityText: "Medio 3/5" },
-            { id: 26, name: "Comté AOP (12 meses)", intensity: 3, intensityText: "Medio 3/5" },
-            { id: 27, name: "Comté AOP (18 meses)", intensity: 3, intensityText: "Medio-Fuerte 3/5" },
-            { id: 28, name: "Salers AOP", intensity: 3, intensityText: "Medio-Fuerte 3/5" },
-            { id: 29, name: "Tête de Moine AOP", intensity: 3, intensityText: "Medio-Fuerte 3/5" },
-            { id: 30, name: "Parmigiano Reggiano (24m)", intensity: 3, intensityText: "Medio-Fuerte 3/5" },
+            { id: 41, name: "Morbier AOP", intensity: 3, intensityText: "Medio 3/5" },
+            { id: 42, name: "Ossau-Iraty AOP", intensity: 3, intensityText: "Medio 3/5" },
+            { id: 43, name: "Cantal Entre-Deux AOP", intensity: 3, intensityText: "Medio 3/5" },
+            { id: 44, name: "Abondance AOP", intensity: 3, intensityText: "Medio 3/5" },
+            { id: 45, name: "Beaufort AOP", intensity: 3, intensityText: "Medio 3/5" },
+            { id: 46, name: "Comté AOP (12 meses)", intensity: 3, intensityText: "Medio 3/5" },
+            { id: 47, name: "Comté AOP (18 meses)", intensity: 3, intensityText: "Medio-Fuerte 3/5" },
+            { id: 48, name: "Salers AOP", intensity: 3, intensityText: "Medio-Fuerte 3/5" },
+            { id: 49, name: "Tête de Moine AOP", intensity: 3, intensityText: "Medio-Fuerte 3/5" },
+            { id: 50, name: "Parmigiano Reggiano (24m)", intensity: 3, intensityText: "Medio-Fuerte 3/5" },
+            { id: 51, name: "Tomme des Pyrénées Brebis", intensity: 3, intensityText: "Medio 3/5" },
+            { id: 52, name: "Grana Padano AOP", intensity: 3, intensityText: "Medio-Fuerte 3/5" },
+            { id: 53, name: "Taleggio AOP (Italia)", intensity: 3, intensityText: "Medio 3/5" },
+            { id: 54, name: "Saint-Nectaire Fermier", intensity: 3, intensityText: "Medio 3/5" },
+            { id: 55, name: "Pecorino Toscano AOP", intensity: 3, intensityText: "Medio 3/5" },
+            { id: 56, name: "Tomme Crayeuse", intensity: 3, intensityText: "Medio 3/5" },
+            { id: 57, name: "Laguiole Selección AOP", intensity: 3, intensityText: "Medio-Fuerte 3/5" },
+            { id: 58, name: "Cheddar Medium", intensity: 3, intensityText: "Medio 3/5" },
+            { id: 59, name: "Mimolette Demi-Vieille", intensity: 3, intensityText: "Medio 3/5" },
+            { id: 60, name: "Provolone Valpadana Dolce", intensity: 3, intensityText: "Medio 3/5" },
 
             // === INTENSIDAD 4/5 ===
-            { id: 31, name: "Appenzeller Extra (Suiza)", intensity: 4, intensityText: "Fuerte 4/5" },
-            { id: 32, name: "Gruyère d'Alpage AOP", intensity: 4, intensityText: "Fuerte 4/5" },
-            { id: 33, name: "Pecorino Romano AOP", intensity: 4, intensityText: "Fuerte 4/5" },
-            { id: 34, name: "Gouda Viejo", intensity: 4, intensityText: "Fuerte 4/5" },
-            { id: 35, name: "Cheddar Vintage (UK)", intensity: 4, intensityText: "Fuerte 4/5" },
-            { id: 36, name: "Pont-l'Évêque AOP", intensity: 4, intensityText: "Fuerte 4/5" },
-            { id: 37, name: "Livarot AOP", intensity: 4, intensityText: "Fuerte 4/5" },
-            { id: 38, name: "Langres AOP", intensity: 4, intensityText: "Fuerte 4/5" },
-            { id: 39, name: "Munster AOP", intensity: 4, intensityText: "Fuerte 4/5" },
-            { id: 40, name: "Maroilles AOP", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 61, name: "Appenzeller Extra (Suiza)", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 62, name: "Gruyère d'Alpage AOP", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 63, name: "Pecorino Romano AOP", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 64, name: "Gouda Viejo", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 65, name: "Cheddar Vintage (UK)", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 66, name: "Pont-l'Évêque AOP", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 67, name: "Livarot AOP", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 68, name: "Langres AOP", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 69, name: "Munster AOP", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 70, name: "Maroilles AOP", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 71, name: "Comté Prestige (24 meses+)", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 72, name: "Mimolette Extra-Vieille", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 73, name: "Cantal Vieux AOP", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 74, name: "Schlossberger Viejo", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 75, name: "Tête de Moine Réserve", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 76, name: "Saint-Pancrace (Cabra Viejo)", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 77, name: "Tomme de Montagne Corsé", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 78, name: "Vacherin Fribourgeois", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 79, name: "Provolone Piccante Viejo", intensity: 4, intensityText: "Fuerte 4/5" },
+            { id: 80, name: "Fiore Sardo AOP Ahumado", intensity: 4, intensityText: "Fuerte 4/5" },
 
             // === INTENSIDAD 5/5 ===
-            { id: 41, name: "Époisses Berthaut AOP", intensity: 5, intensityText: "Muy Fuerte 5/5" },
-            { id: 42, name: "Boulette d'Avesnes", intensity: 5, intensityText: "Muy Fuerte 5/5" },
-            { id: 43, name: "Fourme d'Ambert AOP", intensity: 5, intensityText: "Muy Fuerte 5/5" },
-            { id: 44, name: "Bleu d'Auvergne AOP", intensity: 5, intensityText: "Muy Fuerte 5/5" },
-            { id: 45, name: "Gorgonzola Dolce AOP", intensity: 5, intensityText: "Muy Fuerte 5/5" },
-            { id: 46, name: "Gorgonzola Picante AOP", intensity: 5, intensityText: "Muy Fuerte 5/5" },
-            { id: 47, name: "Stilton AOP (UK)", intensity: 5, intensityText: "Muy Fuerte 5/5" },
-            { id: 48, name: "Roquefort Papillon AOP", intensity: 5, intensityText: "Extremo 5/5" },
-            { id: 49, name: "Roquefort Baragnaudes", intensity: 5, intensityText: "Extremo 5/5" },
-            { id: 50, name: "Cabrales AOP", intensity: 5, intensityText: "Extremo 5/5" }
+            { id: 81, name: "Époisses Berthaut AOP", intensity: 5, intensityText: "Muy Fuerte 5/5" },
+            { id: 82, name: "Boulette d'Avesnes", intensity: 5, intensityText: "Muy Fuerte 5/5" },
+            { id: 83, name: "Fourme d'Ambert AOP", intensity: 5, intensityText: "Muy Fuerte 5/5" },
+            { id: 84, name: "Bleu d'Auvergne AOP", intensity: 5, intensityText: "Muy Fuerte 5/5" },
+            { id: 85, name: "Gorgonzola Dolce AOP", intensity: 5, intensityText: "Muy Fuerte 5/5" },
+            { id: 86, name: "Gorgonzola Picante AOP", intensity: 5, intensityText: "Muy Fuerte 5/5" },
+            { id: 87, name: "Stilton AOP (UK)", intensity: 5, intensityText: "Muy Fuerte 5/5" },
+            { id: 88, name: "Roquefort Papillon AOP", intensity: 5, intensityText: "Extremo 5/5" },
+            { id: 89, name: "Roquefort Baragnaudes", intensity: 5, intensityText: "Extremo 5/5" },
+            { id: 90, name: "Cabrales AOP", intensity: 5, intensityText: "Extremo 5/5" },
+            { id: 91, name: "Bleu des Causses AOP", intensity: 5, intensityText: "Muy Fuerte 5/5" },
+            { id: 92, name: "Bleu de Gex AOP", intensity: 5, intensityText: "Muy Fuerte 5/5" },
+            { id: 93, name: "Fourme de Montbrison AOP", intensity: 5, intensityText: "Muy Fuerte 5/5" },
+            { id: 94, name: "Termignon Azulado", intensity: 5, intensityText: "Extremo 5/5" },
+            { id: 95, name: "Shropshire Blue (UK)", intensity: 5, intensityText: "Muy Fuerte 5/5" },
+            { id: 96, name: "Valdeón IGP (León)", intensity: 5, intensityText: "Extremo 5/5" },
+            { id: 97, name: "Stichelton Artisanal", intensity: 5, intensityText: "Muy Fuerte 5/5" },
+            { id: 98, name: "Trou du Cru (Mini Époisses)", intensity: 5, intensityText: "Muy Fuerte 5/5" },
+            { id: 99, name: "Ami du Chambertin", intensity: 5, intensityText: "Muy Fuerte 5/5" },
+            { id: 100, name: "Soumaintrain AOP", intensity: 5, intensityText: "Muy Fuerte 5/5" },
+            { id: 101, name: "Vieux Boulogne (Extremo)", intensity: 5, intensityText: "Extremo 5/5" }
         ];
 
         let currentUser = 'senora';
         let currentFilter = 'all';
-        
-        // El vault ahora guardará OBJETOS en vez de IDs plano: { senora: { "id_queso": nota }, senor: {} }
         let vault = { senora: {}, senor: {} };
         let userKeys = { senora: '', senor: '' };
         let authenticated = false;
@@ -363,6 +458,10 @@
             document.getElementById('auth-screen').style.display = 'block';
             document.getElementById('auth-title').innerText = `Perfil: ${currentUser === 'senora' ? '👩‍🦰 Sra. Queso' : '👨 Sr. Queso'}`;
             document.getElementById('pass-input').value = '';
+            
+            // Cargar datos de configuración de Telegram guardados en local
+            document.getElementById('tg-token-input').value = localStorage.getItem('buffet_tg_token') || '';
+            document.getElementById('tg-id-input').value = localStorage.getItem('buffet_tg_id') || '';
             document.getElementById('pass-input').focus();
         }
 
@@ -370,21 +469,25 @@
             const password = document.getElementById('pass-input').value.trim();
             if (!password) return alert('Introduce una contraseña');
 
-            const encryptedData = localStorage.getItem(`buffet_vault_v2_${currentUser}`);
+            // Guardar configuración de Telegram en texto plano (es local de tu dispositivo)
+            const tgToken = document.getElementById('tg-token-input').value.trim();
+            const tgId = document.getElementById('tg-id-input').value.trim();
+            if(tgToken) localStorage.setItem('buffet_tg_token', tgToken);
+            if(tgId) localStorage.setItem('buffet_tg_id', tgId);
+
+            const encryptedData = localStorage.getItem(`buffet_vault_v4_${currentUser}`);
             
             if (encryptedData) {
                 try {
                     const bytes = CryptoJS.AES.decrypt(encryptedData, password);
                     const decryptedText = bytes.toString(CryptoJS.enc.Utf8);
-                    
-                    if (!decryptedText) throw new Error("Incorrecto");
-                    
+                    if (!decryptedText) throw new Error();
                     vault[currentUser] = JSON.parse(decryptedText);
                 } catch (e) {
                     return alert('❌ Contraseña incorrecta para este usuario');
                 }
             } else {
-                if(confirm('¿Es la primera vez que entras? Esta contraseña se guardará para proteger tu lista.')) {
+                if(confirm('¿Crear este nuevo perfil protegido con esta contraseña?')) {
                     vault[currentUser] = {};
                     saveToLocalStorage(currentUser, password);
                 } else {
@@ -401,7 +504,7 @@
         function saveToLocalStorage(user, key) {
             const dataString = JSON.stringify(vault[user]);
             const ciphertext = CryptoJS.AES.encrypt(dataString, key).toString();
-            localStorage.setItem(`buffet_vault_v2_${user}`, ciphertext);
+            localStorage.setItem(`buffet_vault_v4_${user}`, ciphertext);
         }
 
         function renderGrid() {
@@ -417,7 +520,6 @@
                 card.className = 'cheese-card';
                 card.id = `cheese-${cheese.id}`;
                 
-                // Creamos los 5 quesitos interactivos
                 let wedgesHTML = '<div class="cheese-rating">';
                 for(let i = 1; i <= 5; i++) {
                     wedgesHTML += `<span class="cheese-wedge" id="wedge-${cheese.id}-${i}" onclick="rateCheese(event, ${cheese.id}, ${i})">🧀</span>`;
@@ -445,17 +547,14 @@
                 const card = document.getElementById(`cheese-${cheese.id}`);
                 if (card) {
                     const rating = vault[currentUser][cheese.id];
-                    
                     if (rating !== undefined) {
                         card.classList.add('tasted');
-                        // Pintar los quesitos activos
                         for(let i = 1; i <= 5; i++) {
                             const wedge = document.getElementById(`wedge-${cheese.id}-${i}`);
                             if(wedge) wedge.classList.toggle('active', i <= rating);
                         }
                     } else {
                         card.classList.remove('tasted');
-                        // Apagar todos los quesitos
                         for(let i = 1; i <= 5; i++) {
                             const wedge = document.getElementById(`wedge-${cheese.id}-${i}`);
                             if(wedge) wedge.classList.remove('active');
@@ -468,7 +567,6 @@
         function switchUser(user) {
             if (currentUser === user && authenticated) return;
             currentUser = user;
-            
             if (!userKeys[user]) {
                 showAuthScreen();
             } else {
@@ -480,40 +578,30 @@
 
         function toggleCheese(id) {
             if (!authenticated) return;
-
             if (vault[currentUser][id] !== undefined) {
-                // Si ya tenía nota, al pulsar el texto lo borramos por completo
                 delete vault[currentUser][id];
             } else {
-                // Si no tenía nota, por defecto le damos 1 quesito para marcarlo como catado
                 vault[currentUser][id] = 1;
             }
-
             saveToLocalStorage(currentUser, userKeys[currentUser]);
             updateUI();
         }
 
         function rateCheese(event, id, rating) {
             if (!authenticated) return;
-            event.stopPropagation(); // Evita que se dispare el click del contenedor superior
-
-            // Guardamos la nota directamente
+            event.stopPropagation();
             vault[currentUser][id] = rating;
-
             saveToLocalStorage(currentUser, userKeys[currentUser]);
             updateUI();
         }
 
         function filterIntensity(value) {
             currentFilter = value;
-            
             const buttons = document.querySelectorAll('.filter-btn');
             buttons.forEach(btn => btn.classList.remove('active'));
-            
             const activeId = value === 'all' ? 'f-all' : `f-${value}`;
             const targetBtn = document.getElementById(activeId);
             if (targetBtn) targetBtn.classList.add('active');
-
             renderGrid();
             updateUI();
         }
@@ -523,11 +611,56 @@
             showAuthScreen();
         }
 
-        document.getElementById('pass-input').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') unlockProfile();
-        });
+        // FUNCIÓN MÁGICA: ENVIAR REPORTE A TELEGRAM
+        function sendToTelegram() {
+            if (!authenticated) return alert("Debes iniciar sesión primero");
 
-        initApp();
+            const token = localStorage.getItem('buffet_tg_token');
+            const chatId = localStorage.getItem('buffet_tg_id');
+
+            if (!token || !chatId) {
+                return alert("⚠️ Configura primero tu Token y Chat ID de Telegram cerrando sesión o al iniciar.");
+            }
+
+            // Filtrar solo los quesos probados por este usuario
+            const tastedCheeses = cheeses.filter(c => vault[currentUser][c.id] !== undefined);
+
+            if (tastedCheeses.length === 0) {
+                return alert("¡Aún no has marcado ningún queso para enviar!");
+            }
+
+            const userName = currentUser === 'senora' ? "👩‍🦰 Sra. Queso" : "👨 Sr. Queso";
+            let message = `📋 *Ruta del Queso de ${userName}* \n`;
+            message += `📍 Les Grands Buffets\n`;
+            message += `----------------------------\n`;
+
+            tastedCheeses.forEach(c => {
+                const rating = vault[currentUser][c.id];
+                const quesitos = "🧀".repeat(rating);
+                message += `🔹 *${c.name}*\n     Intensidad: ${c.intensityText}\n     Nota: ${quesitos}\n\n`;
+            });
+
+            // Enviar petición HTTPS directa a la API de Telegram usando fetch nativo
+            const url = `https://api.telegram.org/bot${token}/sendMessage`;
+            
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    text: message,
+                    parse_mode: 'Markdown'
+                })
+            })
+            .then(res => {
+                if (res.ok) {
+                    alert("✈️ ¡Lista de quesos enviada con éxito a Telegram!");
+                } else {
+                    alert("❌ Error al enviar. Revisa el Token o Chat ID.");
+                }
+            })
+            .catch(err => alert("❌ Error de red al conectar con Telegram"));
+        }
     </script>
 </body>
 </html>
